@@ -1,0 +1,53 @@
+.core-form .core-form-content {
+    display: flex;
+    padding: 18px 0;
+    flex-wrap: wrap;
+}
+
+.core-fieldset-group {
+    background-color: #eee;
+    border: 1px solid #ddd;
+    padding-left: 18px;
+    padding-right: 18px;
+    margin-bottom: 18px;
+}
+
+.core-fieldset-title {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.core-field {
+    width: 50%;
+    padding: 16px 0;
+}
+
+.core-field.core-field-tight {
+    padding: 4px 0;
+}
+
+.core-field.core-wp-editor-field {
+    width: 100%;
+}
+
+.core-field label {
+    display: block;
+    font-weight: bold;
+}
+
+.core-field > input[type="text"],
+.core-field > select {
+    width: 90%;
+}
+
+.core-field.core-field-full-width {
+    width: 100%;
+}
+
+.core-field.core-field-third-width {
+    width: 33.33%;
+}
+.core-field.core-field-small  > input,
+.core-field.core-field-small  > select {
+    width: 175px;
+}

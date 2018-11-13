@@ -1,2 +1,1 @@
-# cahnrswsuwp-plugin-modules
-Custom features for CAHNRS sites
+Core features and tools for CAHNRS sites. More on this later.
