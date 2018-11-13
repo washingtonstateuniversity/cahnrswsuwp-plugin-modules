@@ -1,4 +1,4 @@
-<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Core;
+<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Modules;
 
 ?><div class="core-sublayout-wrapper core-layout-<?php echo esc_attr( $layout ); ?>">
 	<div class="core-sublayout-inner">

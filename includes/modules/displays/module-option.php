@@ -1,4 +1,4 @@
-<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Core;
+<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Modules;
 
 ?><div class="ccore-module-option-wrapper">
 	<input id="core-module-<?php echo $slug; ?>" type="checkbox" name="_core_modules[]" value="module-<?php echo $slug; ?>" />

@@ -1,4 +1,4 @@
-<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Core;
+<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Modules;
 
 ?><div class="misc-pub-section">
 	<label>Expire After: (mm/dd/yyyy)</label><br />

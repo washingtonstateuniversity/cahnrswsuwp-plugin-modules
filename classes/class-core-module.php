@@ -1,4 +1,4 @@
-<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Core;
+<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Modules;
 
 class Core_Module {
 

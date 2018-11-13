@@ -1,4 +1,4 @@
-<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Core;
+<?php namespace WSUWP\CAHNRSWSUWP_Plugin_Modules;
 
 ?>
 <div id="web-rotator-content" style="height:<?php echo esc_attr( $height ); ?>;width:<?php echo esc_attr( $width ); ?>">
