@@ -600,7 +600,7 @@ class Post_Feed_Module extends Core_Module {
 			'post_type'      => $atts['post_type'],
 			'post_status'    => $atts['post_status'],
 			'posts_per_page' => $atts['count'],
-			'order_by'       => $atts['order_by'],
+			'orderby'        => $atts['order_by'],
 			'order'          => $atts['order'],
 			'paged'          => $atts['page'],
 		);
