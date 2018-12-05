@@ -24,8 +24,6 @@ class Scripts {
 		// TODO make version pull from plugin version
 		wp_enqueue_style( 'core-css', ccore_get_plugin_url() . '/css/core-public.css', array(), '0.0.1' );
 
-		// TODO make version pull from plugin version
-		wp_enqueue_script( 'core-js', ccore_get_plugin_url() . '/js/core-public.js', array( 'jquery' ), '0.0.1', true );
 
 	} // End add_public_scripts
 
