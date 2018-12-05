@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: CAHNRSWSUWP Toolbox
-Version: 0.0.6
+Version: 1.0.0
 Description: Core feature set for CAHNRS sites.
 Author: washingtonstateuniversity, Danial Bleile
 Author URI: http://cahnrs.wsu.edu/communications/
