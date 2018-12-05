@@ -1,162 +1,85 @@
 <?php namespace WSUWP\CAHNRSWSUWP_Plugin_Modules;
 
-if ( ! defined( 'ABSPATH' ) ) {
+// If this file is called directly, abort.
+if ( ! defined( 'WPINC' ) ) {
+	die;
+}
 
-	exit; // Exit if accessed directly
+use WSUWP\Plugin_Modules\Module as Module;
 
-} // End if
+class Sub_Layouts_Module extends Module {
 
+	/**
+	 * Version of taxonomy search module used the module.
+	 *
+	 * @since 0.0.1
+	 * @var string $version Version of module.
+	 */
+	protected $version = '0.0.1';
 
-/**
- * Sublayout Module
- * @version 0.0.1
- * @author CAHNRS Communications, Danial Bleile
- *
- * Adds sublayout support to theme content.
- * Sublayouts can be chosen by post type or can be set on
- * an individual page/post. Sublayouts can also be inherited from
- * parent content allowing a whole section of the site to have a defined layout.
- *
- * @uses vendor/Settings_API_Adapter
- *
- */
-class Sub_Layouts_Module extends Core_Module {
+	/**
+	 * Slug/ID for the module.
+	 *
+	 * @since 0.0.1
+	 * @var string|bool $slug
+	 */
+	public $slug = 'cahnrswsuwp_sub_layouts';
 
-	// @var string $version Current version of the module.
-	public $version = '0.0.1';
-
-	// @var string $slug Slug for the module (no spaces, dashes, or numbers).
-	public $slug = 'sub_layouts';
-
-	// @var array $register_args Args to use to register the module.
+	/**
+	 * Registration args for the module
+	 *
+	 * @since 0.0.1
+	 * @var array $register_args Array of registration args
+	 */
 	public $register_args = array(
-		'label'          => 'Content Layout',
-		'helper_text'    => 'Where supported by Theme.',
-		'settings_page'  => array(
-			'page_title'     => 'Core Sub Layout Settings',
-			'menu_title'     => 'Sub Layouts',
-			'capabilities'   => 'manage_options',
-			'page_slug'      => 'core_sublayouts',
-			'callback'       => 'render_options_page',
-		),
-	);
+		'owner'        => 'CAHNRS',
+		'title'        => 'Sub Layouts',
+		'description'  => 'Enable Sub Layout Options',
+		'priority'     => 10,
+		'capability'   => 'Administrator',
+		'default_on'   => false,
+	); // End $register_args
 
-	// @var array Settings for the 'settings_page' to register and save.
-	public $settings = array(
-		'core_sublayout_format' => array(
-			'type'              => 'string',
-			'description'       => 'Base layout to use on theme',
-			'show_in_rest'      => false,
-			'default'           => '',
-		),
-		'core_sublayout_menu' => array(
-			'type'              => 'string',
-			'description'       => 'Base layout to use on theme',
-			'show_in_rest'      => false,
-			'default'           => '',
-		),
-		'core_sublayout_inherit' => array(
-			'type'              => 'string',
-			'description'       => 'Allow Inheritance',
-			'show_in_rest'      => false,
-			'default'           => '',
-		),
-	);
 
-	// @var array $save_args Passed to the Save_Post_API
-	protected $save_args = array(
-		'post_types'             => array( 'post', 'page' ), // Post types to do save on
-		'nonce_name'             => 'core_sublayout_module', // Nonce name used on the metabox or edit form
-		'nonce_action'           => 'core_sublayout_module_save_post', // Nonce action used on the metabox or edit form
-	);
-
-	// @var $post_settings Settings for the Save_Post_API to use.
-	protected $post_settings = array(
-		'_core_sublayout' => array( // Settings key
-			'sanitize_type'      => 'text', // Type of data - used to sanitize the data
-			'default'            => '', // Default value
-			'ignore_empty'       => true, // Ignore if data is an empty string
-		),
-		'_core_sublayout_menu' => array( // Settings key
-			'sanitize_type'      => 'text', // Type of data - used to sanitize the data
-			'default'            => '', // Default value
-			'ignore_empty'       => true, // Ignore if data is an empty string
-		),
-	);
-
-	// @var array Sublayouts available in the theme.
+	/**
+	 * Sub-layout options
+	 *
+	 * @since 0.0.1
+	 * @var array $sub_layouts Array of sublayouts
+	 */
 	public $sub_layouts = array(
 		'default'      => 'Default',
 		'left-column'  => 'Sidebar Left',
 		'right-column' => 'Sidebar Right',
+		'none'         => 'None',
 	);
 
 
-	/**
-	 * Init the module. This is called after from the 'init' action in the parent class.
-	 * @since 0.0.1
-	 */
-	public function init() {
+	private $post_types = array( 'post', 'page' );
 
-		// Add filter to include the sublayou. Theme must support the 'theme_content_html' filter.
-		add_filter( 'theme_content_html', array( $this, 'add_sublayout' ) );
+
+	/**
+	 * Do the module. This should already have checked for active.
+	 *
+	 * @since 0.0.1
+	 *
+	 */
+	protected function init_module() {
 
 		if ( is_admin() ) {
 
 			add_action( 'add_meta_boxes', array( $this, 'add_menu_meta_box' ), 10, 2 );
 
+			add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
+
 		} // End if
+
+		// Add filter to include the sublayou. Theme must support the 'theme_content_html' filter.
+		add_filter( 'theme_content_html', array( $this, 'add_sublayout' ) );
 
 		add_action( 'layout_column_sidebar_before', array( $this, 'add_sidebar_menu' ) );
 
-	} // End init
-
-
-	/**
-	 * Add menu metabox to edit page
-	 * @since 0.0.1
-	 *
-	 */
-	public function add_menu_meta_box( $post_type, $post ) {
-
-		$post_types = array( 'post', 'page' );
-
-		add_meta_box(
-			'cor_sublayout_options',
-			'Layout Options',
-			array( $this, 'render_menu_metabox' ),
-			$post_types,
-			'side',
-			'default'
-		);
-
-	} // End add_menu_meta_box
-
-
-	/**
-	 * Renders custom layout options metabox
-	 * @since 2.1.1
-	 *
-	 * @param
-	 */
-	public function render_menu_metabox( $post ) {
-
-		$sublayouts = $this->sub_layouts;
-
-		$post_id = $post->ID;
-
-		$sublayout = get_post_meta( $post_id, '_core_sublayout', true );
-
-		$menu = get_post_meta( $post_id, '_core_sublayout_menu', true );
-
-		$menu_options = $this->get_menu_terms();
-
-		// Add nonce field to metabox.
-		wp_nonce_field( 'core_sublayout_module_save_post', 'core_sublayout_module' );
-
-		include __DIR__ . '/displays/metabox.php';
-
-	} // End render_menu_metabox
+	} // End do_module
 
 
 	public function add_sidebar_menu() {
@@ -183,256 +106,54 @@ class Sub_Layouts_Module extends Core_Module {
 
 
 	/**
-	 * Add the sublayout to the theme.
+	 * Add menu metabox to edit page
+	 *
 	 * @since 0.0.1
 	 *
-	 * @param string $html HTML of the post content.
-	 *
-	 * @return string Filtered HTML of the post content.
+	 * @param string $post_type Current post type
+	 * @param WP_Post $post
 	 */
-	public function add_sublayout( $html ) {
+	public function add_menu_meta_box( $post_type, $post ) {
 
-		$layout = $this->get_layout();
+		$post_types = array( 'post', 'page' );
 
-		if ( isset( $_GET['test'] ) ) {
+		add_meta_box(
+			'cor_sublayout_options',
+			'Layout Options',
+			array( $this, 'render_menu_metabox' ),
+			$post_types,
+			'side',
+			'default'
+		);
 
-			var_dump( is_front_page() );
-			
-			var_dump( $layout );
+	} // End add_menu_meta_box
 
-			die();
-		
-		};
 
-		if ( ! empty( $layout ) ) {
+	/**
+	 * Renders custom layout options metabox
+	 *
+	 * @since 0.0.1
+	 *
+	 * @param WP_Post $post
+	 */
+	public function render_menu_metabox( $post ) {
 
-			$sidebar = $this->get_sidebar();
+		$sublayouts = $this->sub_layouts;
 
-			switch ( $layout ) {
-
-				case 'left-column':
-					ob_start();
-					include __DIR__ . '/displays/left-column.php';
-					$html = ob_get_clean();
-					break;
-
-				case 'right-column':
-					ob_start();
-					include __DIR__ . '/displays/right-column.php';
-					$html = ob_get_clean();
-					break;
-
-			} // End switch
-		} // End if
-
-		return $html;
-
-	} // End add_sublayout
-
-
-	protected function get_sidebar() {
-
-		$sidebar = '';
-
-		if ( is_singular() || is_post_type_archive() ) {
-
-			$post_type = get_post_type();
-
-			$sidebar = $this->get_sidebar_by_post_type( $post_type );
-
-		} // End if
-
-		return $sidebar;
-
-	} // End get_sidebar
-
-	protected function get_sidebar_by_post_type( $post_type ) {
-
-		$sidebar = '';
-
-		if ( ! empty( $post_type ) ) {
-
-			$sidebar = get_option( 'core_sublayout_sidebar_' . $post_type, '' );
-
-		} // End if
-
-		return $sidebar;
-
-	} // End get_sidebar_by_post_type
-
-
-	protected function get_menu_by_id( $post_id ) {
-
-		$meta_key = '_core_sublayout_menu';
-
-		$menu = get_post_meta( $post_id, $meta_key, true );
-
-		$allow_inherit = get_option( 'core_sublayout_inherit' );
-
-		if ( ( empty( $menu ) || 'default' === $menu ) && ! empty( $allow_inherit ) ) {
-
-			$ancestor_ids = get_post_ancestors( $post_id );
-
-			foreach ( $ancestor_ids as $a_post_id ) {
-
-				$a_menu = get_post_meta( $a_post_id, $meta_key, true );
-
-				if ( ! empty( $a_menu ) || 'default' === $a_menu ) {
-
-					$menu = $a_menu;
-
-					break;
-
-				} // End if
-			} // End foreach
-		} // End if
-
-		return $menu;
-
-	} // End get_layout_by_id
-
-
-	protected function get_menu_by_post_type( $post_type ) {
-
-		$menu = get_option( 'core_sublayout_menu_' . $post_type, '' );
-
-		return $menu;
-
-	} // End if
-
-
-	protected function get_menu() {
-
-		$menu = false;
-
-		if ( is_singular() ) {
-
-			$post_id = get_the_ID();
-
-			$post_type = get_post_type();
-
-			if ( $post_id ) {
-
-				$menu = $this->get_menu_by_id( $post_id );
-
-				if ( empty( $menu ) || 'default' === $menu ) {
-
-					$menu = $this->get_menu_by_post_type( $post_type );
-
-				} // End if
-			} else {
-
-				$menu = $this->get_menu_by_post_type( $post_type );
-
-			} // End if
-		} elseif ( is_post_type_archive() ) {
-
-			$post_type = get_post_type();
-
-			$menu = $this->get_menu_by_post_type( $post_type );
-
-		} // End if
-
-		if ( empty( $menu ) || 'default' === $menu ) {
-
-			$menu = get_option( 'core_sublayout_menu', '' );
-
-		} // End if
-
-		return $menu;
-
-	} // End get_menu
-
-
-	protected function get_layout_by_id( $post_id ) {
-
-		$meta_key = '_core_sublayout';
+		$post_id = $post->ID;
 
 		$sublayout = get_post_meta( $post_id, '_core_sublayout', true );
 
-		$allow_inherit = get_option( 'core_sublayout_inherit' );
+		$menu = get_post_meta( $post_id, '_core_sublayout_menu', true );
 
-		if ( ( empty( $sublayout ) || 'default' === $sublayout ) && ! empty( $allow_inherit ) ) {
+		$menu_options = $this->get_menu_terms();
 
-			$ancestor_ids = get_post_ancestors( $post_id );
+		// Add nonce field to metabox.
+		wp_nonce_field( 'core_sublayout_module_save_post', 'core_sublayout_module' );
 
-			foreach ( $ancestor_ids as $a_post_id ) {
+		include __DIR__ . '/displays/metabox.php';
 
-				$a_sublayout = get_post_meta( $a_post_id, '_core_sublayout', true );
-
-				if ( ! empty( $a_sublayout ) || 'default' === $a_sublayout ) {
-
-					$sublayout = $a_sublayout;
-
-					break;
-
-				} // End if
-			} // End foreach
-		} // End if
-
-		return $sublayout;
-
-	} // End get_layout_by_id
-
-
-	protected function get_layout_by_post_type( $post_type ) {
-
-		$sublayout = false;
-
-		$key = 'core_sublayout_format_' . $post_type;
-
-		$sublayout = get_option( $key, '' );
-
-		return $sublayout;
-
-	} // End if
-
-
-	protected function get_layout() {
-
-		$sublayout = false;
-
-		if ( is_front_page() ) {
-
-			$sublayout = $this->get_layout_by_post_type( 'front_page' );
-
-		} elseif ( is_singular() ) {
-
-			$post_id = get_the_ID();
-
-			$post_type = get_post_type();
-
-			if ( $post_id ) {
-
-				$sublayout = $this->get_layout_by_id( $post_id );
-
-				if ( empty( $sublayout ) || 'default' === $sublayout ) {
-
-					$sublayout = $this->get_layout_by_post_type( $post_type );
-
-				} // End if
-			} else {
-
-				$sublayout = $this->get_layout_by_post_type( $post_type );
-
-			} // End if
-		} elseif ( is_post_type_archive() ) {
-
-			$post_type = get_post_type();
-
-			$sublayout = $this->get_layout_by_post_type( $post_type );
-
-		} // End if
-
-		if ( empty( $sublayout ) || 'default' === $sublayout ) {
-
-			$sublayout = get_option( 'core_sublayout_format', '' );
-
-		} // End if
-
-		return $sublayout;
-
-	} // End get_layout_option
+	} // End render_menu_metabox
 
 
 	protected function get_menu_terms() {
@@ -458,123 +179,193 @@ class Sub_Layouts_Module extends Core_Module {
 	} // End get_menu_terms
 
 
-	public function add_admin_settings() {
+	/**
+	 * Add the sublayout to the theme.
+	 *
+	 * @since 0.0.1
+	 *
+	 * @param string $html HTML of the post content.
+	 *
+	 * @return string Filtered HTML of the post content.
+	 */
+	public function add_sublayout( $html ) {
 
-		$settings_adapter = get_settings_api_adapter();
+		$layout = $this->get_layout();
 
-		$page_slug = $this->get_settings_page_slug();
+		if ( ! empty( $layout ) ) {
 
-		$section = 'core_sublayouts';
+			$sidebar = 'sidebar';
 
-		$menu_options = $this->get_menu_terms();
+			switch ( $layout ) {
 
-		$post_types = ccore_get_post_types_select();
+				case 'left-column':
+					ob_start();
+					include __DIR__ . '/displays/left-column.php';
+					$html = ob_get_clean();
+					break;
 
-		$sidebars = ccore_get_registered_sidebars();
+				case 'right-column':
+					ob_start();
+					include __DIR__ . '/displays/right-column.php';
+					$html = ob_get_clean();
+					break;
 
-		$post_types['front_page'] = 'Front Page';
+			} // End switch
+		} // End if
 
-		$settings = $this->settings;
+		return $html;
 
-		foreach ( $post_types as $slug => $label ) {
-
-			$settings[ 'core_sublayout_format_' . $slug ] = array(
-				'type'              => 'string',
-				'description'       => 'Base layout to use on theme',
-				'show_in_rest'      => false,
-				'default'           => '',
-			);
-
-			$settings[ 'core_sublayout_menu_' . $slug ] = array(
-				'type'              => 'string',
-				'description'       => 'Base layout to use on theme',
-				'show_in_rest'      => false,
-				'default'           => '',
-			);
-
-			$settings[ 'core_sublayout_sidebar_' . $slug ] = array(
-				'type'              => 'string',
-				'description'       => 'Base layout to use on theme',
-				'show_in_rest'      => false,
-				'default'           => '',
-			);
-
-		} // End foreach
+	} // End add_sublayout
 
 
-		// Register settings
+	protected function get_layout() {
 
-		$settings_adapter->register_settings(
-			$page_slug,
-			$settings
-		);
+		$sublayout = false;
 
-		$settings_adapter->add_section(
-			$section,
-			'Core Sub Layout Options',
-			$page_slug,
-			''
-		);
+		if ( is_singular() ) {
 
-		$settings_adapter->add_select_field(
-			'core_sublayout_format',
-			'Base Layout Format',
-			$page_slug,
-			$section,
-			$this->sub_layouts,
-			get_option( 'core_sublayout_format' )
-		);
+			$post_id = get_the_ID();
 
-		$settings_adapter->add_select_field(
-			'core_sublayout_menu',
-			'Base Layout Menu',
-			$page_slug,
-			$section,
-			$menu_options,
-			get_option( 'core_sublayout_menu' )
-		);
+			$post_type = get_post_type();
 
-		foreach ( $post_types as $slug => $label ) {
+			if ( $post_id ) {
 
-			$settings_adapter->add_select_field(
-				'core_sublayout_format_' . $slug,
-				$label . ' Layout Format',
-				$page_slug,
-				$section,
-				$this->sub_layouts,
-				get_option( 'core_sublayout_format_' . $slug, '' )
-			);
+				$sublayout = $this->get_layout_by_id( $post_id );
 
-			$settings_adapter->add_select_field(
-				'core_sublayout_menu_' . $slug,
-				$label . ' Layout Menu',
-				$page_slug,
-				$section,
-				$menu_options,
-				get_option( 'core_sublayout_menu_' . $slug, '' )
-			);
+			} // End if
+		} // End if
 
-			$settings_adapter->add_select_field(
-				'core_sublayout_sidebar_' . $slug,
-				$label . ' Layout Sidebar',
-				$page_slug,
-				$section,
-				$sidebars,
-				get_option( 'core_sublayout_sidebar_' . $slug, '' )
-			);
+		return $sublayout;
 
-		}
+	} // End get_layout_option
 
-		$settings_adapter->add_checkbox_field(
-			'core_sublayout_inherit',
-			'Inherit Parent Layout and Menu',
-			$page_slug,
-			$section,
-			get_option( 'core_sublayout_inherit' )
-		);
 
-	} // End add_settings
+	protected function get_layout_by_id( $post_id ) {
 
-} // End Sub_Layouts
+		$meta_key = '_core_sublayout';
 
-$ccore_sub_layouts_module = new Sub_Layouts_Module();
+		$sublayout = get_post_meta( $post_id, '_core_sublayout', true );
+
+		if ( ( empty( $sublayout ) || 'default' === $sublayout ) ) {
+
+			$ancestor_ids = get_post_ancestors( $post_id );
+
+			foreach ( $ancestor_ids as $a_post_id ) {
+
+				$a_sublayout = get_post_meta( $a_post_id, '_core_sublayout', true );
+
+				if ( ! empty( $a_sublayout ) || 'default' === $a_sublayout ) {
+
+					$sublayout = $a_sublayout;
+
+					break;
+
+				} // End if
+			} // End foreach
+		} // End if
+
+		return $sublayout;
+
+	} // End get_layout_by_id
+
+
+	protected function get_menu() {
+
+		$menu = false;
+
+		if ( is_singular() ) {
+
+			$post_id = get_the_ID();
+
+			$post_type = get_post_type();
+
+			if ( $post_id ) {
+
+				$menu = $this->get_menu_by_id( $post_id );
+
+			} // End if
+		} // End if
+
+		return $menu;
+
+	} // End get_menu
+
+
+	protected function get_menu_by_id( $post_id ) {
+
+		$meta_key = '_core_sublayout_menu';
+
+		$menu = get_post_meta( $post_id, $meta_key, true );
+
+		if ( ( empty( $menu ) || 'default' === $menu ) ) {
+
+			$ancestor_ids = get_post_ancestors( $post_id );
+
+			foreach ( $ancestor_ids as $a_post_id ) {
+
+				$a_menu = get_post_meta( $a_post_id, $meta_key, true );
+
+				if ( ! empty( $a_menu ) || 'default' === $a_menu ) {
+
+					$menu = $a_menu;
+
+					break;
+
+				} // End if
+			} // End foreach
+		} // End if
+
+		return $menu;
+
+	} // End get_layout_by_id
+
+
+	public function save_post( $post_id, $post ) {
+
+		// If this is an autosave, our form has not been submitted, so we don't want to do anything.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+
+			return false;
+
+		} // end if
+
+		// Check the user's permissions.
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+
+			return false;
+
+		} // end if
+
+		if ( in_array( $post->post_type, $this->post_types, true ) ) {
+
+			if ( isset( $_REQUEST['core_sublayout_module'] ) ) {
+
+				$nonce = $_REQUEST['core_sublayout_module'];
+
+				if ( ! wp_verify_nonce( $nonce, 'core_sublayout_module_save_post' ) ) {
+
+					die( 'Security check' );
+
+				} else {
+
+					$keys = array( '_core_sublayout', '_core_sublayout_menu' );
+
+					foreach ( $keys as $key ) {
+
+						if ( isset( $_REQUEST[ $key ] ) ) {
+
+							$value = sanitize_text_field( $_REQUEST[ $key ] );
+
+							update_post_meta( $post_id, $key, $value );
+
+						} // End if
+					} // End foreach
+				} // End if
+			} // End if
+		} // End if
+
+	} // End save_post
+
+} // End Video_Module
+
+$cahnrswsuwp_sub_layouts_module = new Sub_Layouts_Module();

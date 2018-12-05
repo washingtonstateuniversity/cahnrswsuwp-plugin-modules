@@ -1,9 +1,9 @@
 {
-  "name": "cahnrswsuwp-plugin-core",
+  "name": "cahnrswsuwp-plugin-modlues",
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/washingtonstateuniversity/cahnrswsuwp-plugin-core"
+    "url": "https://github.com/washingtonstateuniversity/cahnrswsuwp-plugin-modules"
   },
   "author": "washingtonstateuniversity",
   "license": "GPL-2.0+",

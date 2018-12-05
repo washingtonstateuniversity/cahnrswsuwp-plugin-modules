@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: CAHNRS WSUWP Plugin Core
+Plugin Name: CAHNRSWSUWP Toolbox
 Version: 0.0.6
 Description: Core feature set for CAHNRS sites.
 Author: washingtonstateuniversity, Danial Bleile
@@ -23,15 +23,7 @@ if ( version_compare( PHP_VERSION, '5.3', '<' ) ) {
 
 	include_once __DIR__ . '/functions.php';
 
-	include_once __DIR__ . '/vendor/settings-api/settings-api-adapter.php';
-
-	if ( is_admin() ) {
-
-		include_once __DIR__ . '/vendor/save-post/save-post.php';
-
-	} // End if
-
-	include_once __DIR__ . '/includes/modules/include-modules.php';
+	include_once __DIR__ . '/cahnrswsuwp-modules.php';
 
 	include_once __DIR__ . '/includes/scripts/include-scripts.php';
 
